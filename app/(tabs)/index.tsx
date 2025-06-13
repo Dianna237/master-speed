@@ -1,75 +1,166 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { saveTestResult } from "@/utils/history";
+import { runSpeedTest } from "@/utils/speedTest";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+type SpeedTestResult = {
+  ping: number;
+  downloadSpeed: string;
+  uploadSpeed: string;
+};
 
-export default function HomeScreen() {
+export default function TestScreen() {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<SpeedTestResult | null>(null);
+
+  const handleStart = async () => {
+    setLoading(true);
+    const res = await runSpeedTest();
+    setResult(res);
+    await saveTestResult({
+      date: new Date().toISOString(),
+      ping: res.ping,
+      downloadSpeed: parseFloat(res.downloadSpeed),
+      uploadSpeed: parseFloat(res.uploadSpeed)
+    });
+    setLoading(false);
+  };
+  const handleDownload = () => {
+    // Placeholder for download/export logic
+    alert("Download clicked!");
+  };
+  const handleUpload = () => {
+    // Placeholder for upload/import logic
+    alert("Upload clicked!");
+  };
+  const handleLanguage = () => {
+    // Placeholder for language selection
+    alert("Language selection!");
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome to dianna app!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      {/* Logo and App Name */}
+      <View style={styles.logoContainer}>
+        {/* <Image
+          source={require("@/assets/images/logo.png")}
+          style={styles.logo}
+        /> */}
+        <Text style={styles.appName}>MASTER TEST</Text>
+      </View>
+      {/* Start Button */}
+      <TouchableOpacity
+        style={styles.startButton}
+        onPress={handleStart}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator size="large" color="#0084FF" />
+        ) : (
+          <Text style={styles.startText}>START</Text>
+        )}
+      </TouchableOpacity>
+      {/* Show result */}
+      {result && (
+        <View style={styles.resultBox}>
+          <Text>Download: {result.downloadSpeed} Mbps</Text>
+          <Text>Upload: {result.uploadSpeed} Mbps</Text>
+          <Text>Ping: {result.ping} ms</Text>
+        </View>
+      )}
+      {/* Download/Upload Buttons */}
+      <View style={styles.actionRow}>
+        <TouchableOpacity style={styles.actionButton} onPress={handleDownload}>
+          <Text style={styles.actionIcon}>⬇️</Text>
+          <Text style={styles.actionLabel}>Download</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={handleUpload}>
+          <Text style={styles.actionIcon}>⬆️</Text>
+          <Text style={styles.actionLabel}>Upload</Text>
+        </TouchableOpacity>
+      </View>
+      {/* Globe Icon */}
+      <TouchableOpacity style={styles.globeButton} onPress={handleLanguage}>
+        <Text style={styles.globeIcon}>🌐</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
   },
-  stepContainer: {
-    gap: 8,
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 32,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    resizeMode: "contain",
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  appName: {
+    fontSize: 20,
+    letterSpacing: 4,
+    color: "#0084FF",
+    fontWeight: "bold",
+  },
+  startButton: {
+    borderWidth: 4,
+    borderColor: "#0084FF",
+    borderRadius: 100,
+    width: 160,
+    height: 160,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 32,
+  },
+  startText: {
+    fontSize: 32,
+    fontWeight: "bold",
+    color: "#222",
+  },
+  resultBox: {
+    marginBottom: 24,
+    alignItems: "center",
+  },
+  actionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "80%",
+    marginBottom: 32,
+  },
+  actionButton: {
+    alignItems: "center",
+    flex: 1,
+  },
+  actionIcon: {
+    fontSize: 32,
+    marginBottom: 4,
+  },
+  actionLabel: {
+    fontSize: 16,
+    color: "#222",
+  },
+  globeButton: {
+    position: "absolute",
+    left: 24,
+    bottom: 24,
+  },
+  globeIcon: {
+    fontSize: 28,
   },
 });
