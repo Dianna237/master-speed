@@ -1,8 +1,22 @@
 export async function runSpeedTest() {
-  // Ping test
-  const pingStart = Date.now();
-  await fetch("https://www.google.com", { method: "HEAD" });
-  const ping = Date.now() - pingStart;
+  // Ping test (multiple times for jitter/loss)
+  const pingAttempts = 5;
+  let pings: number[] = [];
+  let lost = 0;
+  for (let i = 0; i < pingAttempts; i++) {
+    const pingStart = Date.now();
+    try {
+      await fetch("https://www.google.com", { method: "HEAD" });
+      pings.push(Date.now() - pingStart);
+    } catch {
+      lost++;
+    }
+  }
+  const ping = pings.length > 0 ? Math.round(pings.reduce((a, b) => a + b, 0) / pings.length) : 0;
+  const jitter = pings.length > 1
+    ? Math.round(Math.sqrt(pings.map(x => Math.pow(x - ping, 2)).reduce((a, b) => a + b, 0) / (pings.length - 1)))
+    : 0;
+  const loss = Math.round((lost / pingAttempts) * 100);
 
   // Download test
   const downloadStart = Date.now();
@@ -20,6 +34,8 @@ export async function runSpeedTest() {
 
   return {
     ping,
+    jitter,
+    loss,
     downloadSpeed: downloadSpeed.toFixed(2),
     uploadSpeed: uploadSpeed.toFixed(2),
   };

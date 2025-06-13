@@ -5,6 +5,8 @@ type TestResult = {
   downloadSpeed: number;
   uploadSpeed: number;
   ping: number;
+  jitter: number;
+  loss: number;
 };
 
 const HISTORY_KEY = "speedtest_history";

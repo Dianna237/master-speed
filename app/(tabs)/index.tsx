@@ -3,15 +3,16 @@ import { runSpeedTest } from "@/utils/speedTest";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 type SpeedTestResult = {
   ping: number;
+  jitter: number;
+  loss: number;
   downloadSpeed: string;
   uploadSpeed: string;
 };
@@ -22,11 +23,14 @@ export default function TestScreen() {
 
   const handleStart = async () => {
     setLoading(true);
+    setResult(null);
     const res = await runSpeedTest();
     setResult(res);
     await saveTestResult({
       date: new Date().toISOString(),
       ping: res.ping,
+      jitter: res.jitter,
+      loss: res.loss,
       downloadSpeed: parseFloat(res.downloadSpeed),
       uploadSpeed: parseFloat(res.uploadSpeed)
     });
@@ -73,6 +77,8 @@ export default function TestScreen() {
           <Text>Download: {result.downloadSpeed} Mbps</Text>
           <Text>Upload: {result.uploadSpeed} Mbps</Text>
           <Text>Ping: {result.ping} ms</Text>
+          <Text>Jitter: {result.jitter} ms</Text>
+          <Text>Loss: {result.loss} %</Text>
         </View>
       )}
       {/* Download/Upload Buttons */}
@@ -99,12 +105,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     alignItems: "center",
-    justifyContent: "center",
     padding: 24,
   },
   logoContainer: {
+    width: "100%",
     alignItems: "center",
-    marginBottom: 32,
+    paddingTop: 48,
+    marginBottom: 48,
   },
   logo: {
     width: 120,
@@ -113,7 +120,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   appName: {
-    fontSize: 20,
+    fontSize: 24,
     letterSpacing: 4,
     color: "#0084FF",
     fontWeight: "bold",
@@ -126,7 +133,7 @@ const styles = StyleSheet.create({
     height: 160,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 32,
+    marginBottom: 48,
   },
   startText: {
     fontSize: 32,
@@ -134,31 +141,44 @@ const styles = StyleSheet.create({
     color: "#222",
   },
   resultBox: {
-    marginBottom: 24,
+    width: "100%",
+    backgroundColor: "#f5f5f5",
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 48,
     alignItems: "center",
   },
   actionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    width: "80%",
+    width: "100%",
+    paddingHorizontal: 20,
     marginBottom: 32,
   },
   actionButton: {
     alignItems: "center",
     flex: 1,
+    backgroundColor: "#f5f5f5",
+    padding: 16,
+    borderRadius: 12,
+    marginHorizontal: 8,
   },
   actionIcon: {
     fontSize: 32,
-    marginBottom: 4,
+    marginBottom: 8,
   },
-  actionLabel: {
+  actionLabel: { 
     fontSize: 16,
     color: "#222",
+    fontWeight: "500",
   },
   globeButton: {
     position: "absolute",
     left: 24,
     bottom: 24,
+    backgroundColor: "#f5f5f5",
+    padding: 12,
+    borderRadius: 30,
   },
   globeIcon: {
     fontSize: 28,
