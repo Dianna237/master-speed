@@ -8,6 +8,7 @@ import { Colors } from "@/constants/Colors";
 import Octicons from "@expo/vector-icons/Octicons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { Feather } from "@expo/vector-icons";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -32,8 +33,19 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Test",
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <SimpleLineIcons name="speedometer" size={28} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: "Dashboard",
+          headerShown: false,
+          tabBarIcon: ({ color }) => (
+            <Feather name="home" size={28} color={color} />
           ),
         }}
       />
@@ -41,6 +53,7 @@ export default function TabLayout() {
         name="history"
         options={{
           title: "History",
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <Octicons name="history" size={28} color={color} />
           ),
@@ -50,6 +63,7 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: "Setting",
+          headerShown: false,
           tabBarIcon: ({ color }) => (
             <Octicons name="gear" size={28} color={color} />
           ),
