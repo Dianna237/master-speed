@@ -1,31 +1,34 @@
 "use client";
 
+import DefaultBody from "@/components/DefaultBody";
+import DefaultHeader from "@/components/DefaultHeader";
+import { Ionicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system";
 import { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
   Alert,
   ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../components/Card";
-import * as FileSystem from "expo-file-system";
-import * as SQLite from "expo-sqlite";
+import { useThemeStore } from "../store/themeStore";
 
 export default function SettingsScreen() {
+  const { isDark, setTheme } = useThemeStore();
   const [locationEnabled, setLocationEnabled] = useState(true);
 
   const handleThemeChange = (value: boolean) => {
-    // setTheme(value ? "dark" : "light")
+    setTheme(value ? "dark" : "light");
   };
 
   const clearAllData = async () => {
     try {
       // Close the database
-      SQLite.openDatabaseSync("networktest.db").closeAsync();
+      // SQLite.openDatabaseSync("networktest.db").closeAsync(); // This line might cause issues if not handled carefully with open connections
 
       // Delete the database file
       await FileSystem.deleteAsync(
@@ -55,71 +58,79 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ScrollView
-    // style={[styles.container, { backgroundColor: isDark ? "#121212" : "#f5f5f5" }]}
-    >
-      <Text
-      // style={[styles.title, { color: isDark ? "#ffffff" : "#000000" }]}
-      >
-        Settings
-      </Text>
-
-      <Card>
-        <Text style={styles.sectionTitle}>Appearance</Text>
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Dark Mode</Text>
-          <Switch
-            // value={isDark}
-            onValueChange={handleThemeChange}
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
-            // thumbColor={isDark ? "#007AFF" : "#f4f3f4"}
-          />
-        </View>
-      </Card>
-
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>Test Settings</Text>
-        <View style={styles.settingRow}>
-          <Text style={styles.settingLabel}>Use Location</Text>
-          <Switch
-            value={locationEnabled}
-            onValueChange={setLocationEnabled}
-            trackColor={{ false: "#767577", true: "#81b0ff" }}
-            thumbColor={locationEnabled ? "#007AFF" : "#f4f3f4"}
-          />
-        </View>
-      </Card>
-
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>Data Management</Text>
-        <TouchableOpacity
-          style={styles.dangerButton}
-          onPress={confirmClearData}
+    <>
+      <DefaultHeader />
+      <DefaultBody>
+        <ScrollView
+          style={[
+            styles.container,
+            { backgroundColor: isDark ? "#121212" : "#f5f5f5" },
+          ]}
         >
-          <Ionicons name="trash-outline" size={20} color="#ffffff" />
-          <Text style={styles.dangerButtonText}>Clear All Data</Text>
-        </TouchableOpacity>
-      </Card>
-
-      <Card style={styles.card}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <View style={styles.aboutContainer}>
-          <Text style={styles.appName}>Network Monitor</Text>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
-          <Text style={styles.appDescription}>
-            A mobile app for measuring network quality metrics including
-            latency, jitter, download/upload speeds, and packet loss.
+          <Text
+            style={[styles.title, { color: isDark ? "#ffffff" : "#000000" }]}
+          >
+            Settings
           </Text>
-        </View>
-      </Card>
-    </ScrollView>
+
+          <Card>
+            <Text style={styles.sectionTitle}>Appearance</Text>
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Dark Mode</Text>
+              <Switch
+                value={isDark}
+                onValueChange={handleThemeChange}
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={isDark ? "#007AFF" : "#f4f3f4"}
+              />
+            </View>
+          </Card>
+
+          <Card style={styles.card}>
+            <Text style={styles.sectionTitle}>Test Settings</Text>
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>Use Location</Text>
+              <Switch
+                value={locationEnabled}
+                onValueChange={setLocationEnabled}
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={locationEnabled ? "#007AFF" : "#f4f3f4"}
+              />
+            </View>
+          </Card>
+
+          <Card style={styles.card}>
+            <Text style={styles.sectionTitle}>Data Management</Text>
+            <TouchableOpacity
+              style={styles.dangerButton}
+              onPress={confirmClearData}
+            >
+              <Ionicons name="trash-outline" size={20} color="#ffffff" />
+              <Text style={styles.dangerButtonText}>Clear All Data</Text>
+            </TouchableOpacity>
+          </Card>
+
+          <Card style={styles.card}>
+            <Text style={styles.sectionTitle}>About</Text>
+            <View style={styles.aboutContainer}>
+              <Text style={styles.appName}>Network Monitor</Text>
+              <Text style={styles.appVersion}>Version 1.0.0</Text>
+              <Text style={styles.appDescription}>
+                A mobile app for measuring network quality metrics including
+                latency, jitter, download/upload speeds, and packet loss.
+              </Text>
+            </View>
+          </Card>
+        </ScrollView>
+      </DefaultBody>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    width: "100%",
   },
   title: {
     fontSize: 24,

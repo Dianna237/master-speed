@@ -1,18 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import DefaultBody from "@/components/DefaultBody";
+import DefaultHeader from "@/components/DefaultHeader";
+import { getTestResults } from "@/services/DatabaseService";
+import { getIPInfo } from "@/services/NetworkService";
+import { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
   RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { Card } from "../components/Card";
 import { MetricCard } from "../components/MetricCard";
-import NetworkService from "../services/NetworkService";
 import type { TestResult } from "../types";
-import { getTestResults } from "@/services/DatabaseService";
 
 export default function DashboardScreen() {
   const [latestTest, setLatestTest] = useState<TestResult | null>(null);
@@ -35,7 +37,7 @@ export default function DashboardScreen() {
       }
 
       // Get IP info
-      const ipData = await NetworkService.getIPInfo();
+      const ipData = await getIPInfo();
       setIpInfo({
         ip: ipData.ip,
         provider: ipData.org || "Unknown",
@@ -52,86 +54,90 @@ export default function DashboardScreen() {
   };
 
   return (
-    <ScrollView
-      style={[styles.container]}
-      // , { backgroundColor: isDark ? "#121212" : "#f5f5f5" }
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <Card>
-        <Text style={styles.sectionTitle}>Connection Info</Text>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>IP Address:</Text>
-          <Text style={styles.infoValue}>{ipInfo.ip}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Provider:</Text>
-          <Text style={styles.infoValue}>{ipInfo.provider}</Text>
-        </View>
-      </Card>
+    <>
+      <DefaultHeader />
+      <DefaultBody>
+        <ScrollView
+          style={[styles.container]}
+          // , { backgroundColor: isDark ? "#121212" : "#f5f5f5" }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          <Card>
+            <Text style={styles.sectionTitle}>Connection Info</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>IP Address:</Text>
+              <Text style={styles.infoValue}>{ipInfo.ip}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Provider:</Text>
+              <Text style={styles.infoValue}>{ipInfo.provider}</Text>
+            </View>
+          </Card>
 
-      <Text
-        style={[styles.sectionHeader]}
-        // { color: isDark ? "#ffffff" : "#000000" }
-      >
-        Latest Test Results
-      </Text>
-
-      {latestTest ? (
-        <View style={styles.metricsContainer}>
-          <MetricCard
-            title="Latency"
-            value={`${latestTest.latency.toFixed(1)}`}
-            unit="ms"
-            icon="pulse"
-          />
-          <MetricCard
-            title="Download"
-            value={`${latestTest.download.toFixed(1)}`}
-            unit="Mbps"
-            icon="arrow-down"
-          />
-          <MetricCard
-            title="Upload"
-            value={`${latestTest.upload.toFixed(1)}`}
-            unit="Mbps"
-            icon="arrow-up"
-          />
-          <MetricCard
-            title="Jitter"
-            value={`${latestTest.jitter.toFixed(1)}`}
-            unit="ms"
-            icon="analytics"
-          />
-          <MetricCard
-            title="Packet Loss"
-            value={`${latestTest.packetLoss.toFixed(1)}`}
-            unit="%"
-            icon="warning"
-          />
-          <MetricCard
-            title="Last Test"
-            value={new Date(latestTest.timestamp).toLocaleTimeString()}
-            unit=""
-            icon="time"
-          />
-        </View>
-      ) : (
-        <Card>
-          <Text style={styles.noDataText}>
-            No test data available. Run a test to see results.
+          <Text
+            style={[styles.sectionHeader]}
+            // { color: isDark ? "#ffffff" : "#000000" }
+          >
+            Latest Test Results
           </Text>
-        </Card>
-      )}
-    </ScrollView>
+
+          {latestTest ? (
+            <View style={styles.metricsContainer}>
+              <MetricCard
+                title="Latency"
+                value={`${latestTest.latency.toFixed(1)}`}
+                unit="ms"
+                icon="pulse"
+              />
+              <MetricCard
+                title="Download"
+                value={`${latestTest.download.toFixed(1)}`}
+                unit="Mbps"
+                icon="arrow-down"
+              />
+              <MetricCard
+                title="Upload"
+                value={`${latestTest.upload.toFixed(1)}`}
+                unit="Mbps"
+                icon="arrow-up"
+              />
+              <MetricCard
+                title="Jitter"
+                value={`${latestTest.jitter.toFixed(1)}`}
+                unit="ms"
+                icon="analytics"
+              />
+              <MetricCard
+                title="Packet Loss"
+                value={`${latestTest.packetLoss.toFixed(1)}`}
+                unit="%"
+                icon="warning"
+              />
+              <MetricCard
+                title="Last Test"
+                value={new Date(latestTest.timestamp).toLocaleTimeString()}
+                unit=""
+                icon="time"
+              />
+            </View>
+          ) : (
+            <Card>
+              <Text style={styles.noDataText}>
+                No test data available. Run a test to see results.
+              </Text>
+            </Card>
+          )}
+        </ScrollView>
+      </DefaultBody>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   title: {
     fontSize: 24,

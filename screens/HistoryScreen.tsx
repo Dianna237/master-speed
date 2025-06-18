@@ -1,20 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import DefaultBody from "@/components/DefaultBody";
+import DefaultHeader from "@/components/DefaultHeader";
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
+  deleteTestResult as deleteTestResultFromDB,
+  exportAsCSV,
+  getTestResults,
+  TestResult,
+} from "@/services/DatabaseService";
 import { Ionicons } from "@expo/vector-icons";
-import DatabaseService from "../services/DatabaseService";
-import { Card } from "../components/Card";
-import type { TestResult } from "../types";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Card } from "../components/Card";
 
 export default function HistoryScreen() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -27,7 +33,7 @@ export default function HistoryScreen() {
   const loadTestResults = async () => {
     try {
       setLoading(true);
-      const results = await DatabaseService.getTestResults();
+      const results = await getTestResults();
       setTestResults(results);
     } catch (error) {
       console.error("Error loading test results:", error);
@@ -37,9 +43,9 @@ export default function HistoryScreen() {
     }
   };
 
-  const deleteTestResult = async (id: number) => {
+  const handleDeleteTestResult = async (id: number) => {
     try {
-      await DatabaseService.deleteTestResult(id);
+      await deleteTestResultFromDB(id);
       setTestResults(testResults.filter((result) => result.id !== id));
     } catch (error) {
       console.error("Error deleting test result:", error);
@@ -56,7 +62,7 @@ export default function HistoryScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => deleteTestResult(id),
+          onPress: () => handleDeleteTestResult(id),
         },
       ]
     );
@@ -69,7 +75,7 @@ export default function HistoryScreen() {
         return;
       }
 
-      const csvContent = await DatabaseService.exportAsCSV();
+      const csvContent = await exportAsCSV();
       const fileUri = `${FileSystem.documentDirectory}network_test_results.csv`;
 
       await FileSystem.writeAsStringAsync(fileUri, csvContent);
@@ -102,20 +108,22 @@ export default function HistoryScreen() {
         <View style={styles.metricsContainer}>
           <View style={styles.metricItem}>
             <Text style={styles.metricLabel}>Latency</Text>
-            <Text style={styles.metricValue}>{item.latency.toFixed(1)} ms</Text>
+            <Text style={styles.metricValue}>
+              {(item.latency ?? 0).toFixed(1)} ms
+            </Text>
           </View>
 
           <View style={styles.metricItem}>
             <Text style={styles.metricLabel}>Download</Text>
             <Text style={styles.metricValue}>
-              {item.download.toFixed(1)} Mbps
+              {(item.download ?? 0).toFixed(1)} Mbps
             </Text>
           </View>
 
           <View style={styles.metricItem}>
             <Text style={styles.metricLabel}>Upload</Text>
             <Text style={styles.metricValue}>
-              {item.upload.toFixed(1)} Mbps
+              {(item.upload ?? 0).toFixed(1)} Mbps
             </Text>
           </View>
         </View>
@@ -131,49 +139,60 @@ export default function HistoryScreen() {
   };
 
   return (
-    <View
-    // style={[styles.container, { backgroundColor: isDark ? "#121212" : "#f5f5f5" }]}
-    >
-      <View style={styles.header}>
-        <Text
-        //  style={[styles.title, { color: isDark ? "#ffffff" : "#000000" }]}
+    <>
+      <DefaultHeader />
+      <DefaultBody>
+        <View
+        // style={[styles.container, { backgroundColor: isDark ? "#121212" : "#f5f5f5" }]}
         >
-          Test History
-        </Text>
-        <TouchableOpacity style={styles.exportButton} onPress={exportResults}>
-          <Ionicons name="share-outline" size={20} color="#007AFF" />
-          <Text style={styles.exportText}>Export</Text>
-        </TouchableOpacity>
-      </View>
-
-      {testResults.length === 0 ? (
-        <Card>
-          <View style={styles.emptyContainer}>
-            <Ionicons name="document-text-outline" size={48} color="#8E8E93" />
-            <Text style={styles.emptyText}>No test results yet</Text>
-            <Text style={styles.emptySubtext}>
-              Run a network test to see your history
+          <View style={styles.header}>
+            <Text
+            //  style={[styles.title, { color: isDark ? "#ffffff" : "#000000" }]}
+            >
+              Test History
             </Text>
+            <TouchableOpacity
+              style={styles.exportButton}
+              onPress={exportResults}
+            >
+              <Ionicons name="share-outline" size={20} color="#007AFF" />
+              <Text style={styles.exportText}>Export</Text>
+            </TouchableOpacity>
           </View>
-        </Card>
-      ) : (
-        <FlatList
-          data={testResults}
-          renderItem={renderTestResult}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-          onRefresh={loadTestResults}
-          refreshing={loading}
-        />
-      )}
-    </View>
+
+          {testResults.length === 0 ? (
+            <Card>
+              <View style={styles.emptyContainer}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={48}
+                  color="#8E8E93"
+                />
+                <Text style={styles.emptyText}>No test results yet</Text>
+                <Text style={styles.emptySubtext}>
+                  Run a network test to see your history
+                </Text>
+              </View>
+            </Card>
+          ) : (
+            <FlatList
+              data={testResults}
+              renderItem={renderTestResult}
+              keyExtractor={(item) => item.id.toString()}
+              contentContainerStyle={styles.listContainer}
+              onRefresh={loadTestResults}
+              refreshing={loading}
+            />
+          )}
+        </View>
+      </DefaultBody>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   header: {
     flexDirection: "row",

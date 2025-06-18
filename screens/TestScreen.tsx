@@ -1,20 +1,28 @@
 "use client";
 
+import { Card } from "@/components/Card";
+import DefaultBody from "@/components/DefaultBody";
+import DefaultHeader from "@/components/DefaultHeader";
+import { ProgressBar } from "@/components/ProgressBar";
+import { saveTestResult } from "@/services/DatabaseService";
+import SpeedTest from "@cloudflare/speedtest";
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
   Alert,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import NetworkService from "../services/NetworkService";
-import { Card } from "../components/Card";
-import { ProgressBar } from "../components/ProgressBar";
+import {
+  getGPSLocation,
+  getIPInfo,
+  startSpeedTest,
+  stopSpeedTest,
+} from "../services/NetworkService";
 import type { SpeedTestResult } from "../types";
-import { saveTestResult } from "@/services/DatabaseService";
 
 export default function TestScreen() {
   const [isRunning, setIsRunning] = useState(false);
@@ -22,157 +30,190 @@ export default function TestScreen() {
   const [currentStep, setCurrentStep] = useState("");
   const [results, setResults] = useState<SpeedTestResult | null>(null);
 
+  function setResult(obj) {
+    const resTxt = JSON.stringify(obj, null, 2);
+
+    console.log("***********************", resTxt);
+
+    // resEl.textContent = "";
+    // resEl.appendChild(resTxt);
+  }
+
+  const engine = new SpeedTest({
+    autoStart: false,
+  });
+
+  engine.onResultsChange = ({ type }) => {
+    !engine.isFinished && setResult(engine.results.raw);
+    console.log(type);
+  };
+  engine.onFinish = (results) => {
+    setResult(results.getSummary());
+    console.log(results.getSummary());
+    console.log(results.getScores());
+  };
+
+  engine.onError = (e) => console.log(e);
+
   const runTest = async () => {
     try {
       setIsRunning(true);
       setResults(null);
+      setProgress(0.0);
+      setCurrentStep("Starting Cloudflare speed test...");
 
-      // Step 1: Ping test
-      setCurrentStep("Measuring latency...");
-      setProgress(0.1);
-      const { latency, jitter } = await NetworkService.measureLatency();
-      setProgress(0.3);
+      await startSpeedTest((latestResult) => {
+        setResults(latestResult);
 
-      // Step 2: Download test
-      setCurrentStep("Testing download speed...");
-      setProgress(0.4);
-      const download = await NetworkService.measureDownloadSpeed();
-      setProgress(0.6);
-
-      // Step 3: Upload test
-      setCurrentStep("Testing upload speed...");
-      setProgress(0.7);
-      const upload = await NetworkService.measureUploadSpeed();
-      setProgress(0.9);
-
-      // Step 4: Packet loss test
-      setCurrentStep("Measuring packet loss...");
-      const packetLoss = await NetworkService.estimatePacketLoss();
-      setProgress(1.0);
-
-      // Compile results
-      const testResults: SpeedTestResult = {
-        latency,
-        jitter,
-        download,
-        upload,
-        packetLoss,
-      };
-
-      setResults(testResults);
-
-      // Get IP and location info
-      const ipInfo = await NetworkService.getIPInfo();
-      const locationData = await NetworkService.getGPSLocation();
-
-      // Save to database
-      await saveTestResult({
-        timestamp: Date.now(),
-        latency,
-        jitter,
-        download,
-        upload,
-        packetLoss,
-        ipAddress: ipInfo.ip,
-        location: locationData
-          ? `${locationData.latitude},${locationData.longitude}`
-          : ipInfo.loc || "Unknown",
-        provider: ipInfo.org || "Unknown",
-        notes: "",
+        // Update progress based on test stage
+        if (latestResult.download > 0 && latestResult.upload === 0) {
+          setProgress(0.5);
+          setCurrentStep("Measuring download speed...");
+        } else if (latestResult.upload > 0) {
+          setProgress(0.9);
+          setCurrentStep("Measuring upload speed...");
+        } else {
+          setProgress(0.2);
+          setCurrentStep("Measuring latency and jitter...");
+        }
       });
 
+      setProgress(1.0);
       setCurrentStep("Test completed");
+
+      // Get IP and location info after test completes
+      const ipInfo = await getIPInfo();
+      const locationData = await getGPSLocation();
+
+      // Save to database only if results are available
+      if (results) {
+        await saveTestResult({
+          timestamp: Date.now(),
+          latency: results.latency,
+          jitter: results.jitter || 0,
+          download: results.download,
+          upload: results.upload,
+          packetLoss: results.packetLoss,
+          ipAddress: ipInfo.ip,
+          location: locationData
+            ? `${locationData.latitude},${locationData.longitude}`
+            : ipInfo.loc || "Unknown",
+          provider: ipInfo.org || "Unknown",
+          notes: "Cloudflare Speed Test",
+        });
+        console.log("=======================", results);
+      }
     } catch (error) {
       console.error("Error running test:", error);
       Alert.alert(
         "Test Error",
-        "An error occurred while running the network test."
+        `An error occurred: ${(error as Error).message}`
       );
     } finally {
       setIsRunning(false);
     }
   };
 
+  const stopTest = () => {
+    stopSpeedTest();
+    setIsRunning(false);
+    setCurrentStep("Test stopped");
+    setProgress(0.0);
+  };
+
   return (
-    <View style={styles.container}>
-      <Card>
-        {!isRunning && !results ? (
-          <View style={styles.startContainer}>
-            <Text style={styles.startText}>
-              Run a network test to measure your connection quality
-            </Text>
-            <TouchableOpacity
-              style={styles.startButton}
-              onPress={runTest}
-              disabled={isRunning}
-            >
-              <Ionicons name="speedometer" size={40} />
-              <Text style={styles.startButtonText}>Start Test</Text>
-            </TouchableOpacity>
-          </View>
-        ) : isRunning ? (
-          <View style={styles.progressContainer}>
-            <Text style={styles.progressText}>{currentStep}</Text>
-            <ProgressBar progress={progress} />
-            <ActivityIndicator
-              style={styles.spinner}
-              size="large"
-              color="#007AFF"
-            />
-          </View>
-        ) : (
-          <View style={styles.resultsContainer}>
-            <Text style={styles.resultsTitle}>Test Results</Text>
+    <>
+      <DefaultHeader />
+      <DefaultBody>
+        <View style={styles.container}>
+          <TouchableOpacity onPress={() => engine.play()}>
+            <Text style={{ backgroundColor: "red" }}>press me</Text>
+          </TouchableOpacity>
+          <Card>
+            {!isRunning && !results ? (
+              <View style={styles.startContainer}>
+                <Text style={styles.startText}>
+                  Run a network test to measure your connection quality
+                </Text>
+                <TouchableOpacity
+                  style={styles.startButton}
+                  onPress={runTest}
+                  disabled={isRunning}
+                >
+                  <Ionicons name="speedometer" size={40} />
+                  <Text style={styles.startButtonText}>Start Test</Text>
+                </TouchableOpacity>
+              </View>
+            ) : isRunning ? (
+              <View style={styles.progressContainer}>
+                <Text style={styles.progressText}>{currentStep}</Text>
+                <ProgressBar progress={progress} />
+                <ActivityIndicator
+                  style={styles.spinner}
+                  size="large"
+                  color="#007AFF"
+                />
+                <TouchableOpacity style={styles.stopButton} onPress={stopTest}>
+                  <Text style={styles.stopButtonText}>Stop Test</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.resultsContainer}>
+                <Text style={styles.resultsTitle}>Test Results</Text>
 
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Latency:</Text>
-              <Text style={styles.resultValue}>
-                {results?.latency.toFixed(1)} ms
-              </Text>
-            </View>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>Latency:</Text>
+                  <Text style={styles.resultValue}>
+                    {results?.latency.toFixed(1)} ms
+                  </Text>
+                </View>
 
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Jitter:</Text>
-              <Text style={styles.resultValue}>
-                {results?.jitter.toFixed(1)} ms
-              </Text>
-            </View>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>Jitter:</Text>
+                  <Text style={styles.resultValue}>
+                    {results?.jitter?.toFixed(1) ?? "N/A"} ms
+                  </Text>
+                </View>
 
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Download:</Text>
-              <Text style={styles.resultValue}>
-                {results?.download.toFixed(1)} Mbps
-              </Text>
-            </View>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>Download:</Text>
+                  <Text style={styles.resultValue}>
+                    {results?.download.toFixed(1)} Mbps
+                  </Text>
+                </View>
 
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Upload:</Text>
-              <Text style={styles.resultValue}>
-                {results?.upload.toFixed(1)} Mbps
-              </Text>
-            </View>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>Upload:</Text>
+                  <Text style={styles.resultValue}>
+                    {results?.upload.toFixed(1)} Mbps
+                  </Text>
+                </View>
 
-            <View style={styles.resultRow}>
-              <Text style={styles.resultLabel}>Packet Loss:</Text>
-              <Text style={styles.resultValue}>
-                {results?.packetLoss.toFixed(1)}%
-              </Text>
-            </View>
+                <View style={styles.resultRow}>
+                  <Text style={styles.resultLabel}>Packet Loss:</Text>
+                  <Text style={styles.resultValue}>
+                    {results?.packetLoss?.toFixed(1) ?? "N/A"}%
+                  </Text>
+                </View>
 
-            <TouchableOpacity style={styles.newTestButton} onPress={runTest}>
-              <Text style={styles.newTestButtonText}>Run New Test</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </Card>
-    </View>
+                <TouchableOpacity
+                  style={styles.newTestButton}
+                  onPress={runTest}
+                >
+                  <Text style={styles.newTestButtonText}>Run New Test</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </Card>
+        </View>
+      </DefaultBody>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -226,8 +267,18 @@ const styles = StyleSheet.create({
   spinner: {
     marginTop: 20,
   },
+  stopButton: {
+    marginTop: 20,
+    padding: 10,
+    backgroundColor: "#FF3B30",
+    borderRadius: 8,
+  },
+  stopButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
   resultsContainer: {
-    padding: 20,
+    padding: 5,
     width: "100%",
   },
   resultsTitle: {

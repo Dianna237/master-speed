@@ -1,4 +1,4 @@
-import {create} from "zustand";
+import { create } from "zustand";
 
 import { getTestHistory, saveTestResult } from "@/utils/history";
 
@@ -7,6 +7,8 @@ type TestResult = {
   downloadSpeed: number;
   uploadSpeed: number;
   ping: number;
+  jitter: number;
+  loss: number;
 };
 
 type SpeedTestState = {
