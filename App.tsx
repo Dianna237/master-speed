@@ -8,7 +8,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import DashboardScreen from "./screens/DashboardScreen";
 import HistoryScreen from "./screens/HistoryScreen";
 import SettingsScreen from "./screens/SettingsScreen";
-import TestScreen from "./screens/TestScreen";
+import TestScreen from "./screens/HomeScreen";
 
 const Tab = createBottomTabNavigator();
 

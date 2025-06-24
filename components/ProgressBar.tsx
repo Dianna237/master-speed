@@ -1,17 +1,26 @@
-import { View, StyleSheet } from "react-native"
+import { View, StyleSheet } from "react-native";
 
 interface ProgressBarProps {
-  progress: number // 0 to 1
+  progress: number; // 0 to 1
+  color?: string; // Optional color for the progress bar
 }
 
-export function ProgressBar({ progress }: ProgressBarProps) {
-  const clampedProgress = Math.min(Math.max(progress, 0), 1)
+export function ProgressBar({ progress, color }: ProgressBarProps) {
+  const clampedProgress = Math.min(Math.max(progress, 0), 1);
 
   return (
     <View style={styles.container}>
-      <View style={[styles.progress, { width: `${clampedProgress * 100}%` }]} />
+      <View
+        style={[
+          styles.progress,
+          {
+            width: `${clampedProgress * 100}%`,
+            backgroundColor: color || styles.progress.backgroundColor,
+          },
+        ]}
+      />
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -26,4 +35,4 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "#007AFF",
   },
-})
+});

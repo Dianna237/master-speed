@@ -14,6 +14,8 @@ export interface TestResult {
   location?: string;
   provider?: string;
   notes?: string;
+  downloadHistory?: string; // JSON string of numbers
+  uploadHistory?: string; // JSON string of numbers
 }
 
 export interface TestResultInsert extends Omit<TestResult, "id"> {}
@@ -23,30 +25,30 @@ const dbPromise = SQLite.openDatabaseAsync("networktest.db");
 
 // Migration definitions
 const migrations = [
-  {
-    version: 1,
-    execute: async (tx: SQLite.SQLTransaction) => {
-      await tx.execAsync(`
-        CREATE TABLE IF NOT EXISTS test_results (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          timestamp INTEGER NOT NULL,
-          latency REAL,
-          jitter REAL,
-          download REAL,
-          upload REAL,
-          packet_loss REAL,
-          ip_address TEXT,
-          location TEXT,
-          provider TEXT,
-          notes TEXT
-        );
-      `);
-
-      await tx.execAsync(`
-        CREATE INDEX IF NOT EXISTS idx_test_results_timestamp 
-        ON test_results (timestamp DESC);
-      `);
-    },
+  async (db: SQLite.SQLiteDatabase) => {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS test_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp INTEGER NOT NULL,
+        latency REAL,
+        jitter REAL,
+        download REAL,
+        upload REAL,
+        packet_loss REAL,
+        ip_address TEXT,
+        location TEXT,
+        provider TEXT,
+        notes TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_test_results_timestamp 
+      ON test_results (timestamp DESC);
+    `);
+  },
+  async (db: SQLite.SQLiteDatabase) => {
+    await db.execAsync(`
+      ALTER TABLE test_results ADD COLUMN download_history TEXT;
+      ALTER TABLE test_results ADD COLUMN upload_history TEXT;
+    `);
   },
 ];
 
@@ -54,31 +56,20 @@ const migrations = [
 export const initializeDatabase = async () => {
   try {
     const db = await dbPromise;
-
-    // Check current version
-    const versionResult = await db.getFirstAsync<{ user_version: number }>(
-      "PRAGMA user_version;"
+    const result = await db.getFirstAsync<{ user_version: number }>(
+      "PRAGMA user_version"
     );
-    const currentVersion = versionResult?.user_version || 0;
+    const currentVersion = result?.user_version ?? 0;
 
-    // Get latest migration version
-    const latestVersion = migrations[migrations.length - 1].version;
-
-    if (currentVersion < latestVersion) {
-      await db.withExclusiveTransactionAsync(async (tx) => {
-        // Apply pending migrations
-        for (const migration of migrations) {
-          if (migration.version > currentVersion) {
-            await migration.execute(tx);
-          }
+    if (currentVersion < migrations.length) {
+      await db.withTransactionAsync(async () => {
+        for (let i = currentVersion; i < migrations.length; i++) {
+          await migrations[i](db);
         }
-
-        // Update database version
-        await tx.execAsync(`PRAGMA user_version = ${latestVersion};`);
+        await db.execAsync(`PRAGMA user_version = ${migrations.length}`);
       });
-
       console.log(
-        `Database migrated from version ${currentVersion} to ${latestVersion}`
+        `Database migrated from version ${currentVersion} to ${migrations.length}`
       );
     }
 
@@ -88,6 +79,7 @@ export const initializeDatabase = async () => {
       text2: "Network test database initialized successfully",
     });
   } catch (error) {
+    console.error("Database initialization error:", error);
     showToast({
       type: "error",
       text1: "Database Error",
@@ -101,25 +93,26 @@ export const saveTestResult = async (
   result: TestResultInsert
 ): Promise<number> => {
   const db = await dbPromise;
-  const { insertId } = await db.runAsync(
+  const { lastInsertRowId } = await db.runAsync(
     `INSERT INTO test_results (
       timestamp, latency, jitter, download, upload, 
-      packet_loss, ip_address, location, provider, notes
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-    [
-      result.timestamp,
-      result.latency,
-      result.jitter,
-      result.download,
-      result.upload,
-      result.packetLoss,
-      result.ipAddress,
-      result.location,
-      result.provider,
-      result.notes,
-    ]
+      packet_loss, ip_address, location, provider, notes,
+      download_history, upload_history
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+    result.timestamp,
+    result.jitter ?? 0,
+    result.latency ?? 0,
+    result.download ?? 0,
+    result.upload ?? 0,
+    result.packetLoss ?? 0,
+    result.ipAddress ?? "",
+    result.location ?? "",
+    result.provider ?? "",
+    result.notes ?? "",
+    result.downloadHistory ?? "[]",
+    result.uploadHistory ?? "[]"
   );
-  return insertId!;
+  return lastInsertRowId;
 };
 
 export const getTestResults = async (limit = 100): Promise<TestResult[]> => {
@@ -136,7 +129,9 @@ export const getTestResults = async (limit = 100): Promise<TestResult[]> => {
       ip_address AS ipAddress,
       location,
       provider,
-      notes
+      notes,
+      download_history AS downloadHistory,
+      upload_history AS uploadHistory
     FROM test_results 
     ORDER BY timestamp DESC
     LIMIT ?;`,
@@ -161,7 +156,9 @@ export const getTestResultById = async (
       ip_address AS ipAddress,
       location,
       provider,
-      notes
+      notes,
+      download_history AS downloadHistory,
+      upload_history AS uploadHistory
     FROM test_results 
     WHERE id = ?;`,
     [id]
@@ -198,6 +195,8 @@ export const exportAsCSV = async (): Promise<string> => {
     "Location",
     "Provider",
     "Notes",
+    "Download History",
+    "Upload History",
   ].join(",");
 
   const rows = results.map((result) => {
@@ -214,6 +213,8 @@ export const exportAsCSV = async (): Promise<string> => {
       `"${result.location || ""}"`,
       `"${result.provider || ""}"`,
       `"${result.notes?.replace(/"/g, '""') || ""}"`,
+      `"${result.downloadHistory || ""}"`,
+      `"${result.uploadHistory || ""}"`,
     ].join(",");
   });
 
@@ -245,4 +246,3 @@ export const getAllTestServers = async () => {
 
 // Initialize database on module load
 initializeDatabase().catch(console.error);
-

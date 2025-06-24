@@ -1,6 +1,6 @@
 import React from "react";
-import TestScreen from "@/screens/TestScreen";
+import HomeScreen from "@/screens/HomeScreen";
 
-export default function Test() {
-  return <TestScreen />;
+export default function Home() {
+  return <HomeScreen />;
 }

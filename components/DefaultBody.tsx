@@ -7,7 +7,7 @@ const DefaultBody: FC<DefaultBodyType> = ({ extra_header, children }) => {
   return (
     <>
       {extra_header ? (
-        <View style={styles.extra_header_style}>{children}</View>
+      <View style={styles.extra_header_style}>{children}</View>
       ) : (
         <View style={styles.container}>{children}</View>
       )}

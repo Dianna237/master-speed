@@ -1,14 +1,12 @@
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform } from "react-native";
-
 import { HapticTab } from "@/components/HapticTab";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
 import Octicons from "@expo/vector-icons/Octicons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { Feather } from "@expo/vector-icons";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -36,16 +34,6 @@ export default function TabLayout() {
           headerShown: false,
           tabBarIcon: ({ color }) => (
             <SimpleLineIcons name="speedometer" size={28} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: "Dashboard",
-          headerShown: false,
-          tabBarIcon: ({ color }) => (
-            <Feather name="home" size={28} color={color} />
           ),
         }}
       />
