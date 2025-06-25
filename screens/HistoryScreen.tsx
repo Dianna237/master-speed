@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
   View,
   useColorScheme,
+  DeviceEventEmitter,
 } from "react-native";
 import { Card } from "../components/Card";
 import { Link } from "expo-router";
@@ -32,6 +33,11 @@ export default function HistoryScreen() {
 
   useEffect(() => {
     loadTestResults();
+    const subscription = DeviceEventEmitter.addListener(
+      "testHistoryUpdated",
+      loadTestResults
+    );
+    return () => subscription.remove();
   }, []);
 
   const loadTestResults = async () => {

@@ -2,11 +2,12 @@ import { io, Socket } from "socket.io-client";
 import { SpeedTestResult } from "../types";
 import { saveTestResult } from "./DatabaseService";
 import * as Location from "expo-location";
+import { DeviceEventEmitter } from "react-native";
 
 // Environment variable
-const WEBSOCKET_URL =
-  process.env.EXPO_PUBLIC_WEBSOCKET_URL ||
-  "wss://webdev-projects-port3000.up.railway.app/";
+const WEBSOCKET_URL = "ws://192.168.1.172:3000";
+  // process.env.EXPO_PUBLIC_WEBSOCKET_URL ||
+  // "wss://backendqos-production.up.railway.app";
 
 // External speed test servers for actual internet speed testing
 const EXTERNAL_TEST_SERVERS = [
@@ -81,7 +82,6 @@ export const startCustomSpeedTest = (
   // Test state variables
   let downloadStartTime = 0;
   let downloadSize = 0;
-  let expectedChunks = 0;
   let receivedChunks = 0;
   const downloadHistory: number[] = [];
   const uploadHistory: number[] = [];
@@ -168,7 +168,6 @@ export const startCustomSpeedTest = (
     downloadStartTime = Date.now();
     downloadSize = 0;
     receivedChunks = 0;
-    expectedChunks = 10; // Based on your server sending 10MB in 1MB chunks
     onProgressCallback?.({ stage: "download", value: 0 });
   });
 
@@ -179,7 +178,7 @@ export const startCustomSpeedTest = (
     receivedChunks++;
 
     console.log(
-      `Received chunk ${receivedChunks}/${expectedChunks}, total downloaded: ${downloadSize}`
+      `Received chunk #${receivedChunks}, total downloaded: ${downloadSize}`
     );
 
     const downloadDuration = (Date.now() - downloadStartTime) / 1000;
@@ -230,9 +229,10 @@ export const startCustomSpeedTest = (
     onProgressCallback?.({ stage: "upload", value: 0 });
 
     // Use smaller chunks and longer intervals to reduce memory pressure
-    const uploadChunkSize = 256 * 1024; // 256KB chunks instead of 1MB
+    const uploadChunkSize = 256 * 1024; // 256KB chunks
     const uploadChunk = new ArrayBuffer(uploadChunkSize);
     let uploadedBytes = 0;
+    let sentChunks = 0;
     const uploadStartTime = Date.now();
 
     const uploadInterval = setInterval(() => {
@@ -243,16 +243,16 @@ export const startCustomSpeedTest = (
 
       socket.emit("upload_chunk", uploadChunk);
       uploadedBytes += uploadChunkSize;
+      sentChunks++;
+      console.log(
+        `Sent upload chunk #${sentChunks}, total uploaded: ${uploadedBytes} bytes`
+      );
 
-      // Calculate and report upload speed
-      const uploadDuration = (Date.now() - uploadStartTime) / 1000;
-      const uploadSpeed =
-        uploadDuration > 0
-          ? (uploadedBytes * 8) / (uploadDuration * 1000 * 1000)
-          : 0;
-      uploadHistory.push(uploadSpeed);
-      onProgressCallback?.({ stage: "upload", value: uploadSpeed });
-    }, 500); // 500ms intervals instead of 200ms
+      // Calculate and report instantaneous upload speed for this chunk
+      const chunkSpeed = (uploadChunkSize * 8) / (0.5 * 1000 * 1000); // Mbps, 0.5s interval
+      uploadHistory.push(chunkSpeed);
+      onProgressCallback?.({ stage: "upload", value: chunkSpeed });
+    }, 500); // 500ms intervals
 
     // End upload test after 5 seconds
     setTimeout(() => {
@@ -271,6 +271,9 @@ export const startCustomSpeedTest = (
           uploadHistory.push(finalUploadSpeed);
         }
         socket.emit("end_upload_test");
+        console.log(
+          `Upload test finished. Total chunks sent: ${sentChunks}, total uploaded: ${uploadedBytes} bytes`
+        );
       }
     }, 5000);
   });
@@ -332,6 +335,7 @@ export const startCustomSpeedTest = (
         ? `${locationInfo.city}, ${locationInfo.country}`
         : "Unknown",
     });
+    DeviceEventEmitter.emit("testHistoryUpdated");
 
     // Clean up after test completion
     setTimeout(() => {

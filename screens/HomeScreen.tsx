@@ -59,23 +59,6 @@ export default function HomeScreen() {
         setCurrentStep("Test completed");
         setProgress(1);
         setIsRunning(false);
-
-        try {
-          const ipInfo = await getIPInfo();
-          await saveTestResult({
-            ...finalResult,
-            jitter: finalResult.jitter ?? 0,
-            timestamp: Date.now(),
-            ipAddress: ipInfo.ip,
-            location: ipInfo.city
-              ? `${ipInfo.city}, ${ipInfo.region ?? ""}`
-              : ipInfo.loc || "Unknown",
-            provider: ipInfo.org || "Unknown",
-          });
-        } catch (error) {
-          console.error("Error saving test results:", error);
-          Alert.alert("Error", "Could not save test results.");
-        }
       }
     );
   };
@@ -278,7 +261,7 @@ export default function HomeScreen() {
                       <Text
                         style={[styles.metricValue, { color: colors.text }]}
                       >
-                        {results?.latency.toFixed(1)}
+                        {results?.jitter?.toFixed(1)}
                       </Text>
                       <Text
                         style={[
@@ -323,7 +306,7 @@ export default function HomeScreen() {
                       <Text
                         style={[styles.metricValue, { color: colors.text }]}
                       >
-                        {results?.jitter?.toFixed(1) ?? "N/A"}
+                        {results?.latency?.toFixed(1) ?? "N/A"}
                       </Text>
                       <Text
                         style={[

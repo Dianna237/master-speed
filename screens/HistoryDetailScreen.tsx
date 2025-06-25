@@ -77,6 +77,8 @@ export default function HistoryDetailScreen() {
   const downloadData = JSON.parse(downloadHistory);
   const uploadData = JSON.parse(uploadHistory);
 
+  console.log(uploadData, upload);
+
   const chartConfig = {
     backgroundGradientFromOpacity: 0,
     backgroundGradientToOpacity: 0,
