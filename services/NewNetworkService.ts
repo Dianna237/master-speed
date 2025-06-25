@@ -5,9 +5,10 @@ import * as Location from "expo-location";
 import { DeviceEventEmitter } from "react-native";
 
 // Environment variable
-const WEBSOCKET_URL = "ws://192.168.1.172:3000";
-  // process.env.EXPO_PUBLIC_WEBSOCKET_URL ||
-  // "wss://backendqos-production.up.railway.app";
+const WEBSOCKET_URL =
+  // "ws://192.168.1.172:3000";
+  process.env.EXPO_PUBLIC_WEBSOCKET_URL ||
+  "wss://backendqos-production.up.railway.app";
 
 // External speed test servers for actual internet speed testing
 const EXTERNAL_TEST_SERVERS = [
