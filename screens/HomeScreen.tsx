@@ -1,73 +1,92 @@
 import { Card } from "@/components/Card";
 import DefaultHeader from "@/components/DefaultHeader";
 import { ProgressBar } from "@/components/ProgressBar";
-import { saveTestResult } from "@/services/DatabaseService";
+import {
+  notifyTestStart,
+  notifyTestComplete,
+  notifyTestError,
+  notifyBackgroundTestProgress,
+} from "@/services/NotificationService";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  useColorScheme,
 } from "react-native";
-import { getIPInfo } from "../services/NetworkService";
 import {
   startCustomSpeedTest,
   stopCustomSpeedTest,
 } from "../services/NewNetworkService";
 import type { SpeedTestResult } from "../types";
-import { getColors } from "@/theme/colors";
+import { useTheme } from "../components/ThemeProvider";
+import { useTranslation } from "../services/TranslationService";
+import { ThemedView } from "@/components/ThemedView";
 
 export default function HomeScreen() {
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState("");
   const [results, setResults] = useState<SpeedTestResult | null>(null);
-  const colorScheme = useColorScheme();
-  const colors = getColors(colorScheme === "dark" ? "dark" : "light");
+  const { colors } = useTheme();
+  const { t } = useTranslation();
 
   const runTest = async () => {
     setIsRunning(true);
     setResults(null);
     setProgress(0);
-    setCurrentStep("Starting test...");
+    setCurrentStep(t("starting_test"));
+
+    // Send notification when test starts
+    await notifyTestStart();
 
     startCustomSpeedTest(
       (progress) => {
         switch (progress.stage) {
           case "latency":
-            setCurrentStep("Measuring latency and jitter...");
+            setCurrentStep(t("measuring_latency"));
             setProgress(0.2);
+            // Send background progress notification
+            notifyBackgroundTestProgress(0.2, t("measuring_latency"));
             break;
           case "download":
-            setCurrentStep("Measuring download speed...");
+            setCurrentStep(t("measuring_download"));
             setProgress(0.5);
+            // Send background progress notification
+            notifyBackgroundTestProgress(0.5, t("measuring_download"));
             break;
           case "upload":
-            setCurrentStep("Measuring upload speed...");
+            setCurrentStep(t("measuring_upload"));
             setProgress(0.8);
+            // Send background progress notification
+            notifyBackgroundTestProgress(0.8, t("measuring_upload"));
             break;
         }
       },
       async (finalResult) => {
         setResults(finalResult);
-        setCurrentStep("Test completed");
+        setCurrentStep(t("test_completed"));
         setProgress(1);
         setIsRunning(false);
+
+        // Send notification when test completes
+        await notifyTestComplete(finalResult);
       }
     );
   };
 
-  const stopTest = () => {
+  const stopTest = async () => {
     stopCustomSpeedTest();
     setIsRunning(false);
-    setCurrentStep("Test stopped");
+    setCurrentStep(t("test_stopped"));
     setProgress(0);
+
+    // Send notification when test is stopped
+    await notifyTestError(t("test_stopped_by_user"));
   };
 
   const getQualityColor = () => {
@@ -84,14 +103,15 @@ export default function HomeScreen() {
     const latency = results?.latency || 0;
     const packetLoss = results?.packetLoss || 0;
 
-    if (latency < 50 && packetLoss < 1) return "Excellent";
-    if (latency < 100 && packetLoss < 5) return "Good";
-    if (latency < 200 && packetLoss < 10) return "Fair";
-    return "Poor";
+    if (latency < 50 && packetLoss < 1) return t("excellent");
+    if (latency < 100 && packetLoss < 5) return t("good");
+    if (latency < 200 && packetLoss < 10) return t("fair");
+    return t("poor");
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    // <ThemedView style={{ backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <DefaultHeader />
       <ScrollView
         contentContainerStyle={[
@@ -105,7 +125,7 @@ export default function HomeScreen() {
           <Card style={{ backgroundColor: colors.card }}>
             <View style={styles.startContainerCentered}>
               <Text style={[styles.startText, { color: colors.text }]}>
-                Run a network test to measure your connection quality
+                {t("run_network_test_description")}
               </Text>
               <TouchableOpacity
                 style={[styles.startButton, { borderColor: colors.primary }]}
@@ -114,7 +134,7 @@ export default function HomeScreen() {
               >
                 <Ionicons name="speedometer" size={40} color={colors.primary} />
                 <Text style={[styles.startButtonText, { color: colors.text }]}>
-                  Start Test
+                  {t("start_test")}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -135,7 +155,7 @@ export default function HomeScreen() {
                 style={[styles.stopButton, { backgroundColor: colors.danger }]}
                 onPress={stopTest}
               >
-                <Text style={styles.stopButtonText}>Stop Test</Text>
+                <Text style={styles.stopButtonText}>{t("stop_test")}</Text>
               </TouchableOpacity>
             </View>
           </Card>
@@ -145,7 +165,7 @@ export default function HomeScreen() {
               <Card style={{ backgroundColor: colors.card }}>
                 <View style={styles.resultsContainer}>
                   <Text style={[styles.resultsTitle, { color: colors.text }]}>
-                    Network Performance Results
+                    {t("network_performance_results")}
                   </Text>
 
                   {/* Main Metrics Grid */}
@@ -191,7 +211,7 @@ export default function HomeScreen() {
                           { color: colors.lighterGrey },
                         ]}
                       >
-                        Download Speed
+                        {t("download_speed")}
                       </Text>
                     </View>
 
@@ -236,7 +256,7 @@ export default function HomeScreen() {
                           { color: colors.lighterGrey },
                         ]}
                       >
-                        Upload Speed
+                        {t("upload_speed")}
                       </Text>
                     </View>
 
@@ -277,7 +297,7 @@ export default function HomeScreen() {
                           { color: colors.lighterGrey },
                         ]}
                       >
-                        Latency
+                        {t("latency")}
                       </Text>
                     </View>
 
@@ -322,7 +342,7 @@ export default function HomeScreen() {
                           { color: colors.lighterGrey },
                         ]}
                       >
-                        Jitter
+                        {t("jitter")}
                       </Text>
                     </View>
                   </View>
@@ -346,7 +366,7 @@ export default function HomeScreen() {
                           { color: colors.danger },
                         ]}
                       >
-                        Packet Loss
+                        {t("packet_loss")}
                       </Text>
                     </View>
                     <View
@@ -385,7 +405,7 @@ export default function HomeScreen() {
                     <Text
                       style={[styles.qualityTitle, { color: colors.green }]}
                     >
-                      Connection Quality
+                      {t("connection_quality")}
                     </Text>
                     <View style={styles.qualityIndicator}>
                       <View
@@ -412,7 +432,7 @@ export default function HomeScreen() {
                     <Text
                       style={[styles.bandwidthTitle, { color: colors.text }]}
                     >
-                      Bandwidth Summary
+                      {t("bandwidth_summary")}
                     </Text>
                     <View style={styles.bandwidthRow}>
                       <Text
@@ -421,7 +441,7 @@ export default function HomeScreen() {
                           { color: colors.lighterGrey },
                         ]}
                       >
-                        Total Bandwidth:
+                        {t("total_bandwidth")}:
                       </Text>
                       <Text
                         style={[styles.bandwidthValue, { color: colors.text }]}
@@ -439,7 +459,7 @@ export default function HomeScreen() {
                           { color: colors.lighterGrey },
                         ]}
                       >
-                        Download/Upload Ratio:
+                        {t("download_upload_ratio")}:
                       </Text>
                       <Text
                         style={[styles.bandwidthValue, { color: colors.text }]}
@@ -465,7 +485,7 @@ export default function HomeScreen() {
                     <Text
                       style={[styles.newTestButtonText, { color: "white" }]}
                     >
-                      Run New Test
+                      {t("run_new_test")}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -475,15 +495,15 @@ export default function HomeScreen() {
         )}
       </ScrollView>
     </SafeAreaView>
+    // </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    // padding: 12,
-    // flex: 1
   },
   title: {
     fontSize: 24,

@@ -3,18 +3,20 @@ import React from "react";
 import { Platform } from "react-native";
 import { HapticTab } from "@/components/HapticTab";
 import TabBarBackground from "@/components/ui/TabBarBackground";
-import { Colors } from "@/constants/Colors";
+import { useTheme } from "@/components/ThemeProvider";
 import Octicons from "@expo/vector-icons/Octicons";
 import SimpleLineIcons from "@expo/vector-icons/SimpleLineIcons";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTranslation } from "@/services/TranslationService";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.lighterGrey,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
@@ -22,15 +24,20 @@ export default function TabLayout() {
           ios: {
             // Use a transparent background on iOS to show the blur effect
             position: "absolute",
+            backgroundColor: colors.card,
           },
-          default: {},
+          default: {
+            backgroundColor: colors.card,
+            borderTopColor: colors.border,
+            borderTopWidth: 1,
+          },
         }),
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Test",
+          title: t("test"),
           headerShown: false,
           tabBarIcon: ({ color }) => (
             <SimpleLineIcons name="speedometer" size={28} color={color} />
@@ -40,7 +47,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: "History",
+          title: t("history"),
           headerShown: false,
           tabBarIcon: ({ color }) => (
             <Octicons name="history" size={28} color={color} />
@@ -50,7 +57,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Setting",
+          title: t("settings"),
           headerShown: false,
           tabBarIcon: ({ color }) => (
             <Octicons name="gear" size={28} color={color} />

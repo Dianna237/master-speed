@@ -1,6 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { SpeedTestResult } from "../types";
 import { saveTestResult } from "./DatabaseService";
+import { notifyTestError } from "./NotificationService";
 import * as Location from "expo-location";
 import { DeviceEventEmitter } from "react-native";
 
@@ -188,7 +189,14 @@ export const startCustomSpeedTest = (
         ? (downloadSize * 8) / (downloadDuration * 1000 * 1000)
         : 0;
 
-    downloadHistory.push(downloadSpeed);
+    // Ensure the final value is in the download history
+    if (
+      downloadHistory.length === 0 ||
+      downloadHistory[downloadHistory.length - 1] !== downloadSpeed
+    ) {
+      downloadHistory.push(downloadSpeed);
+    }
+
     onProgressCallback?.({ stage: "download", value: downloadSpeed });
 
     // Acknowledge receipt
@@ -209,7 +217,7 @@ export const startCustomSpeedTest = (
 
     console.log(`Final download speed: ${downloadSpeed.toFixed(2)} Mbps`);
 
-    // Ensure the final value is in the history
+    // Ensure the final value is in the download history
     if (
       downloadHistory.length === 0 ||
       downloadHistory[downloadHistory.length - 1] !== downloadSpeed
@@ -235,6 +243,7 @@ export const startCustomSpeedTest = (
     let uploadedBytes = 0;
     let sentChunks = 0;
     const uploadStartTime = Date.now();
+    let previousChunkTime = uploadStartTime;
 
     const uploadInterval = setInterval(() => {
       if (!socket?.connected || !isTestInProgress) {
@@ -242,6 +251,7 @@ export const startCustomSpeedTest = (
         return;
       }
 
+      const now = Date.now();
       socket.emit("upload_chunk", uploadChunk);
       uploadedBytes += uploadChunkSize;
       sentChunks++;
@@ -249,9 +259,12 @@ export const startCustomSpeedTest = (
         `Sent upload chunk #${sentChunks}, total uploaded: ${uploadedBytes} bytes`
       );
 
-      // Calculate and report instantaneous upload speed for this chunk
-      const chunkSpeed = (uploadChunkSize * 8) / (0.5 * 1000 * 1000); // Mbps, 0.5s interval
+      // Calculate and report instantaneous upload speed for this chunk using actual time
+      const elapsed = (now - previousChunkTime) / 1000; // seconds since last chunk
+      const chunkSpeed =
+        elapsed > 0 ? (uploadChunkSize * 8) / (elapsed * 1000 * 1000) : 0;
       uploadHistory.push(chunkSpeed);
+      previousChunkTime = now;
       onProgressCallback?.({ stage: "upload", value: chunkSpeed });
     }, 500); // 500ms intervals
 
@@ -259,18 +272,13 @@ export const startCustomSpeedTest = (
     setTimeout(() => {
       clearInterval(uploadInterval);
       if (socket?.connected && isTestInProgress) {
-        // Ensure the final value is in the history
+        // Always add the final value to the upload history
         const uploadDuration = (Date.now() - uploadStartTime) / 1000;
         const finalUploadSpeed =
           uploadDuration > 0
             ? (uploadedBytes * 8) / (uploadDuration * 1000 * 1000)
             : 0;
-        if (
-          uploadHistory.length === 0 ||
-          uploadHistory[uploadHistory.length - 1] !== finalUploadSpeed
-        ) {
-          uploadHistory.push(finalUploadSpeed);
-        }
+        uploadHistory.push(finalUploadSpeed);
         socket.emit("end_upload_test");
         console.log(
           `Upload test finished. Total chunks sent: ${sentChunks}, total uploaded: ${uploadedBytes} bytes`
@@ -309,6 +317,22 @@ export const startCustomSpeedTest = (
       console.error("Could not fetch location info", e);
     }
 
+    // Add the final upload value to the history if it's not already the last value
+    if (
+      uploadHistory.length === 0 ||
+      uploadHistory[uploadHistory.length - 1] !== result.uploadSpeed?.speed
+    ) {
+      uploadHistory.push(result.uploadSpeed?.speed || 0);
+    }
+    // Add the final download value to the history if it's not already the last value
+    if (
+      downloadHistory.length === 0 ||
+      downloadHistory[downloadHistory.length - 1] !==
+        result.downloadSpeed?.speed
+    ) {
+      downloadHistory.push(result.downloadSpeed?.speed || 0);
+    }
+
     const finalResult: SpeedTestResult = {
       latency: parseFloat(result.latency?.avg || "0"),
       jitter: parseFloat(result.jitter?.value || "0"),
@@ -319,7 +343,6 @@ export const startCustomSpeedTest = (
 
     isTestInProgress = false;
     finalResultsCallback?.(finalResult);
-
     // Save extended results to database (only once)
     await saveTestResult({
       timestamp: Date.now(),
@@ -356,7 +379,7 @@ export const startCustomSpeedTest = (
 };
 
 // Helper function to handle test failures
-const handleTestFailure = (reason: string) => {
+const handleTestFailure = async (reason: string) => {
   console.error(`Test failed: ${reason}`);
   isTestInProgress = false;
 
@@ -367,6 +390,9 @@ const handleTestFailure = (reason: string) => {
     upload: 0,
     packetLoss: 100,
   };
+
+  // Send error notification
+  await notifyTestError(reason);
 
   finalResultsCallback?.(failureResult);
   cleanupConnection();

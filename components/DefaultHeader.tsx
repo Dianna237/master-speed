@@ -1,14 +1,14 @@
-import { StatusBar, View, useColorScheme } from "react-native";
-import { getColors } from "@/theme/colors";
+import { StatusBar, View } from "react-native";
+import { useTheme } from "./ThemeProvider";
 
 const DefaultHeader = () => {
-  const colorScheme = useColorScheme();
-  const colors = getColors(colorScheme === "dark" ? "dark" : "light");
+  const { isDark, colors } = useTheme();
+
   return (
     <View>
       <StatusBar
         backgroundColor={colors.primary}
-        barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
+        barStyle={isDark ? "light-content" : "dark-content"}
       />
     </View>
   );

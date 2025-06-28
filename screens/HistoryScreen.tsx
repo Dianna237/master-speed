@@ -17,19 +17,17 @@ import {
   Text,
   TouchableOpacity,
   View,
-  useColorScheme,
   DeviceEventEmitter,
 } from "react-native";
 import { Card } from "../components/Card";
 import { Link } from "expo-router";
-import { getColors } from "@/theme/colors";
+import { useTheme } from "../components/ThemeProvider";
 import spacing from "@/theme/spacing";
 
 export default function HistoryScreen() {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [loading, setLoading] = useState(true);
-  const colorScheme = useColorScheme();
-  const colors = getColors(colorScheme === "dark" ? "dark" : "light");
+  const { colors } = useTheme();
 
   useEffect(() => {
     loadTestResults();

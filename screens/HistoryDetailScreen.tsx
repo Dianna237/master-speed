@@ -1,17 +1,11 @@
 import { RouteProp, useRoute } from "@react-navigation/native";
-import {
-  ScrollView,
-  StyleSheet,
-  View,
-  Text,
-  Dimensions,
-  useColorScheme,
-} from "react-native";
+import { ScrollView, StyleSheet, View, Text, Dimensions } from "react-native";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Ionicons } from "@expo/vector-icons";
 import { LineChart } from "react-native-chart-kit";
-import { getColors } from "@/theme/colors";
+import { useTheme } from "@/components/ThemeProvider";
+import { useTranslation } from "@/services/TranslationService";
 
 type RootStackParamList = {
   HistoryDetail: {
@@ -53,22 +47,21 @@ const DetailRow = ({
 export default function HistoryDetailScreen() {
   const route = useRoute<HistoryDetailRouteProp>();
   const params = route.params || {};
-  const colorScheme = useColorScheme();
-  const colors = getColors(colorScheme === "dark" ? "dark" : "light");
+  const { colors, isDark } = useTheme();
+  const { t } = useTranslation();
 
   const textColor = colors.text;
   const cardBackgroundColor = colors.card;
   const iconColor = colors.lighterGrey;
 
   const {
-    id,
     latency = "0",
     download = "0",
     upload = "0",
     jitter = "0",
     ipAddress = "N/A",
     provider = "N/A",
-    location = "Unknown",
+    location = t("unknown"),
     packetLoss = "0",
     downloadHistory = "[]",
     uploadHistory = "[]",
@@ -77,15 +70,11 @@ export default function HistoryDetailScreen() {
   const downloadData = JSON.parse(downloadHistory);
   const uploadData = JSON.parse(uploadHistory);
 
-  console.log(uploadData, upload);
-
   const chartConfig = {
     backgroundGradientFromOpacity: 0,
     backgroundGradientToOpacity: 0,
     color: (opacity = 1) =>
-      colorScheme === "dark"
-        ? `rgba(255, 255, 255, ${opacity})`
-        : `rgba(0, 0, 0, ${opacity})`,
+      isDark ? `rgba(255, 255, 255, ${opacity})` : `rgba(0, 0, 0, ${opacity})`,
     strokeWidth: 2,
     barPercentage: 0.5,
     useShadowColorFromDataset: false,
@@ -97,7 +86,7 @@ export default function HistoryDetailScreen() {
         <View style={styles.graphPlaceholder}>
           <Ionicons name="stats-chart-outline" size={48} color={iconColor} />
           <Text style={[styles.placeholderText, { color: iconColor }]}>
-            No historical data for {title}.
+            {t("no_historical_data", { title })}
           </Text>
         </View>
       );
@@ -139,35 +128,35 @@ export default function HistoryDetailScreen() {
             type="subtitle"
             style={[styles.cardTitle, { color: textColor }]}
           >
-            Performance Metrics
+            {t("performance_metrics")}
           </ThemedText>
           <DetailRow
             icon="pulse-outline"
-            label="Latency"
+            label={t("latency")}
             value={`${parseFloat(latency).toFixed(1)} ms`}
             color={textColor}
           />
           <DetailRow
             icon="arrow-down-circle-outline"
-            label="Download Speed"
+            label={t("download_speed")}
             value={`${parseFloat(download).toFixed(2)} Mbps`}
             color={textColor}
           />
           <DetailRow
             icon="arrow-up-circle-outline"
-            label="Upload Speed"
+            label={t("upload_speed")}
             value={`${parseFloat(upload).toFixed(2)} Mbps`}
             color={textColor}
           />
           <DetailRow
             icon="timer-outline"
-            label="Jitter"
+            label={t("jitter")}
             value={`${parseFloat(jitter).toFixed(1)} ms`}
             color={textColor}
           />
           <DetailRow
             icon="analytics-outline"
-            label="Packet Loss"
+            label={t("packet_loss")}
             value={`${parseFloat(packetLoss).toFixed(1)}%`}
             color={textColor}
           />
@@ -178,33 +167,33 @@ export default function HistoryDetailScreen() {
             type="subtitle"
             style={[styles.cardTitle, { color: textColor }]}
           >
-            Connection Details
+            {t("connection_details")}
           </ThemedText>
           <DetailRow
             icon="earth-outline"
-            label="IP Address"
+            label={t("ip_address")}
             value={ipAddress}
             color={textColor}
           />
           <DetailRow
             icon="business-outline"
-            label="Service Provider"
+            label={t("service_provider")}
             value={provider}
             color={textColor}
           />
           <DetailRow
             icon="location-outline"
-            label="Location"
+            label={t("location")}
             value={location}
             color={textColor}
           />
         </View>
 
         <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
-          {renderChart("Download History (Mbps)", downloadData, colors.primary)}
+          {renderChart(t("download_history"), downloadData, colors.primary)}
         </View>
         <View style={[styles.card, { backgroundColor: cardBackgroundColor }]}>
-          {renderChart("Upload History (Mbps)", uploadData, colors.green)}
+          {renderChart(t("upload_history"), uploadData, colors.green)}
         </View>
       </ScrollView>
     </ThemedView>

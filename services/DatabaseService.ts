@@ -226,23 +226,6 @@ export const exportAsJSON = async (): Promise<string> => {
   return JSON.stringify(results, null, 2);
 };
 
-// Additional utility functions
-// export const getDefaultTestServer = async () => {
-//   const db = await dbPromise;
-//   const server = await db.getFirstAsync<{
-//     id: number;
-//     name: string;
-//     url: string;
-//   }>(`SELECT id, name, url FROM test_servers WHERE is_default = 1 LIMIT 1;`);
-//   return server || null;
-// };
-
-// export const getAllTestServers = async () => {
-//   const db = await dbPromise;
-//   return await db.getAllAsync<{ id: number; name: string; url: string }>(
-//     `SELECT id, name, url FROM test_servers ORDER BY is_default DESC;`
-//   );
-// };
 
 // Initialize database on module load
 initializeDatabase().catch(console.error);

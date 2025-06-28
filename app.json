@@ -4,29 +4,50 @@
     "slug": "network-monitor",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app uses your location to provide location-based network testing data."
-      }
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to provide location-based network testing data.",
+        "UIBackgroundModes": [
+          "background-processing",
+          "background-fetch",
+          "background-processing",
+          "background-fetch"
+        ],
+        "NSUserNotificationsUsageDescription": "This app sends notifications to keep you informed about network test status.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "dev.expo.master.speed.test"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/images/splash-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["ACCESS_FINE_LOCATION"]
+      "package": "dev.expo.master.speed.test",
+      "googleServicesFile": "./google-services.json",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "WAKE_LOCK",
+        "VIBRATE",
+        "POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
       [
@@ -34,7 +55,31 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow Network Monitor to use your location for location-based network testing."
         }
-      ]
-    ]
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff",
+          "sounds": [
+            "./assets/notification-sound.wav"
+          ]
+        }
+      ],
+      [
+        "expo-background-task",
+        {
+          "minimumInterval": 30
+        }
+      ],
+      "expo-router",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "cc923864-fca0-4748-8f03-98da6c0aaf26"
+      }
+    },
+    "owner": "kaptaincs3"
   }
 }
