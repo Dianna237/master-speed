@@ -150,18 +150,7 @@ const SettingsScreen = () => {
     return "#FF9800";
   };
 
-  const getThemeModeText = () => {
-    switch (themeMode) {
-      case "light":
-        return "Light";
-      case "dark":
-        return "Dark";
-      case "system":
-        return "System";
-      default:
-        return "System";
-    }
-  };
+
 
   const currentThemeOption = themeOptions.find((o) => o.key === themeMode);
 
