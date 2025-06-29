@@ -70,7 +70,6 @@ export async function registerForPushNotificationsAsync() {
           projectId,
         })
       ).data;
-      console.log("Push token:", pushTokenString);
       token = pushTokenString;
     } catch (e: unknown) {
       handleRegistrationError(`${e}`);
@@ -161,7 +160,6 @@ export async function initializeNotificationService(): Promise<void> {
     });
 
     isInitialized = true;
-    console.log("NotificationService initialized successfully");
   } catch (error) {
     console.error("Failed to initialize NotificationService:", error);
   }

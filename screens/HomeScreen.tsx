@@ -2,10 +2,10 @@ import { Card } from "@/components/Card";
 import DefaultHeader from "@/components/DefaultHeader";
 import { ProgressBar } from "@/components/ProgressBar";
 import {
-  notifyTestStart,
+  notifyBackgroundTestProgress,
   notifyTestComplete,
   notifyTestError,
-  notifyBackgroundTestProgress,
+  notifyTestStart,
 } from "@/services/NotificationService";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
@@ -18,14 +18,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTheme } from "../components/ThemeProvider";
 import {
   startCustomSpeedTest,
   stopCustomSpeedTest,
 } from "../services/NewNetworkService";
-import type { SpeedTestResult } from "../types";
-import { useTheme } from "../components/ThemeProvider";
 import { useTranslation } from "../services/TranslationService";
-import { ThemedView } from "@/components/ThemedView";
+import type { SpeedTestResult } from "../types";
 
 export default function HomeScreen() {
   const [isRunning, setIsRunning] = useState(false);
@@ -110,400 +109,400 @@ export default function HomeScreen() {
   };
 
   return (
-    // <ThemedView style={{ backgroundColor: colors.background }}>
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: colors.background }]}
+    >
       <DefaultHeader />
       <ScrollView
         contentContainerStyle={[
-          styles.container,
+          styles.scrollContainer,
           { backgroundColor: colors.background },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         {!isRunning && !results ? (
-          <Card style={{ backgroundColor: colors.card }}>
-            <View style={styles.startContainerCentered}>
-              <Text style={[styles.startText, { color: colors.text }]}>
-                {t("run_network_test_description")}
-              </Text>
-              <TouchableOpacity
-                style={[styles.startButton, { borderColor: colors.primary }]}
-                onPress={runTest}
-                disabled={isRunning}
-              >
-                <Ionicons name="speedometer" size={40} color={colors.primary} />
-                <Text style={[styles.startButtonText, { color: colors.text }]}>
-                  {t("start_test")}
+          <View style={styles.cardWrapper}>
+            <Card
+              style={StyleSheet.flatten([
+                styles.card,
+                { backgroundColor: colors.card },
+              ])}
+            >
+              <View style={styles.startContainerCentered}>
+                <Text style={[styles.startText, { color: colors.text }]}>
+                  {t("run_network_test_description")}
                 </Text>
-              </TouchableOpacity>
-            </View>
-          </Card>
-        ) : isRunning ? (
-          <Card style={{ backgroundColor: colors.card }}>
-            <View style={styles.progressContainer}>
-              <Text style={[styles.progressText, { color: colors.text }]}>
-                {currentStep}
-              </Text>
-              <ProgressBar progress={progress} color={colors.primary} />
-              <ActivityIndicator
-                style={styles.spinner}
-                size="large"
-                color={colors.primary}
-              />
-              <TouchableOpacity
-                style={[styles.stopButton, { backgroundColor: colors.danger }]}
-                onPress={stopTest}
-              >
-                <Text style={styles.stopButtonText}>{t("stop_test")}</Text>
-              </TouchableOpacity>
-            </View>
-          </Card>
-        ) : (
-          <View style={{ flex: 1, width: "100%" }}>
-            <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-              <Card style={{ backgroundColor: colors.card }}>
-                <View style={styles.resultsContainer}>
-                  <Text style={[styles.resultsTitle, { color: colors.text }]}>
-                    {t("network_performance_results")}
+                <TouchableOpacity
+                  style={[styles.startButton, { borderColor: colors.primary }]}
+                  onPress={runTest}
+                  disabled={isRunning}
+                >
+                  <Ionicons
+                    name="speedometer"
+                    size={40}
+                    color={colors.primary}
+                  />
+                  <Text
+                    style={[styles.startButtonText, { color: colors.text }]}
+                  >
+                    {t("start_test")}
                   </Text>
+                </TouchableOpacity>
+              </View>
+            </Card>
+          </View>
+        ) : isRunning ? (
+          <View style={styles.cardWrapper}>
+            <Card
+              style={StyleSheet.flatten([
+                styles.card,
+                { backgroundColor: colors.card },
+              ])}
+            >
+              <View style={styles.progressContainer}>
+                <Text style={[styles.progressText, { color: colors.text }]}>
+                  {currentStep}
+                </Text>
+                <ProgressBar progress={progress} color={colors.primary} />
+                <ActivityIndicator
+                  style={styles.spinner}
+                  size="large"
+                  color={colors.primary}
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.stopButton,
+                    { backgroundColor: colors.danger },
+                  ]}
+                  onPress={stopTest}
+                >
+                  <Text style={styles.stopButtonText}>{t("stop_test")}</Text>
+                </TouchableOpacity>
+              </View>
+            </Card>
+          </View>
+        ) : (
+          <View style={styles.cardWrapper}>
+            <Card
+              style={StyleSheet.flatten([
+                styles.card,
+                { backgroundColor: colors.card },
+              ])}
+            >
+              <View style={styles.resultsContainer}>
+                <Text style={[styles.resultsTitle, { color: colors.text }]}>
+                  {t("network_performance_results")}
+                </Text>
 
-                  {/* Main Metrics Grid */}
-                  <View style={styles.metricsGrid}>
-                    {/* Download Speed */}
-                    <View
-                      style={[
-                        styles.metricCard,
-                        {
-                          backgroundColor: colors.background,
-                          shadowColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.metricIcon,
-                          { backgroundColor: colors.card },
-                        ]}
-                      >
-                        <Ionicons
-                          name="download"
-                          size={24}
-                          color={colors.green}
-                        />
-                      </View>
-                      <Text
-                        style={[styles.metricValue, { color: colors.text }]}
-                      >
-                        {results?.download.toFixed(1)}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.metricUnit,
-                          { color: colors.lighterGrey },
-                        ]}
-                      >
-                        Mbps
-                      </Text>
-                      <Text
-                        style={[
-                          styles.metricLabel,
-                          { color: colors.lighterGrey },
-                        ]}
-                      >
-                        {t("download_speed")}
-                      </Text>
-                    </View>
-
-                    {/* Upload Speed */}
-                    <View
-                      style={[
-                        styles.metricCard,
-                        {
-                          backgroundColor: colors.background,
-                          shadowColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.metricIcon,
-                          { backgroundColor: colors.card },
-                        ]}
-                      >
-                        <Ionicons
-                          name="cloud-upload"
-                          size={24}
-                          color={colors.primary}
-                        />
-                      </View>
-                      <Text
-                        style={[styles.metricValue, { color: colors.text }]}
-                      >
-                        {results?.upload.toFixed(1)}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.metricUnit,
-                          { color: colors.lighterGrey },
-                        ]}
-                      >
-                        Mbps
-                      </Text>
-                      <Text
-                        style={[
-                          styles.metricLabel,
-                          { color: colors.lighterGrey },
-                        ]}
-                      >
-                        {t("upload_speed")}
-                      </Text>
-                    </View>
-
-                    {/* Latency */}
-                    <View
-                      style={[
-                        styles.metricCard,
-                        {
-                          backgroundColor: colors.background,
-                          shadowColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.metricIcon,
-                          { backgroundColor: colors.card },
-                        ]}
-                      >
-                        <Ionicons name="time" size={24} color={colors.option} />
-                      </View>
-                      <Text
-                        style={[styles.metricValue, { color: colors.text }]}
-                      >
-                        {results?.jitter?.toFixed(1)}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.metricUnit,
-                          { color: colors.lighterGrey },
-                        ]}
-                      >
-                        ms
-                      </Text>
-                      <Text
-                        style={[
-                          styles.metricLabel,
-                          { color: colors.lighterGrey },
-                        ]}
-                      >
-                        {t("latency")}
-                      </Text>
-                    </View>
-
-                    {/* Jitter */}
-                    <View
-                      style={[
-                        styles.metricCard,
-                        {
-                          backgroundColor: colors.background,
-                          shadowColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.metricIcon,
-                          { backgroundColor: colors.card },
-                        ]}
-                      >
-                        <Ionicons
-                          name="pulse"
-                          size={24}
-                          color={colors.accent}
-                        />
-                      </View>
-                      <Text
-                        style={[styles.metricValue, { color: colors.text }]}
-                      >
-                        {results?.latency?.toFixed(1) ?? "N/A"}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.metricUnit,
-                          { color: colors.lighterGrey },
-                        ]}
-                      >
-                        ms
-                      </Text>
-                      <Text
-                        style={[
-                          styles.metricLabel,
-                          { color: colors.lighterGrey },
-                        ]}
-                      >
-                        {t("jitter")}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Packet Loss Indicator */}
+                {/* Main Metrics Grid */}
+                <View style={styles.metricsGrid}>
+                  {/* Download Speed */}
                   <View
                     style={[
-                      styles.packetLossContainer,
-                      { backgroundColor: colors.optionBg },
-                    ]}
-                  >
-                    <View style={styles.packetLossHeader}>
-                      <Ionicons
-                        name="warning"
-                        size={20}
-                        color={colors.danger}
-                      />
-                      <Text
-                        style={[
-                          styles.packetLossLabel,
-                          { color: colors.danger },
-                        ]}
-                      >
-                        {t("packet_loss")}
-                      </Text>
-                    </View>
-                    <View
-                      style={[
-                        styles.packetLossBar,
-                        { backgroundColor: colors.lightAsh },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.packetLossFill,
-                          {
-                            backgroundColor: colors.danger,
-                            width: `${Math.min(
-                              results?.packetLoss || 0,
-                              100
-                            )}%`,
-                          },
-                        ]}
-                      />
-                    </View>
-                    <Text
-                      style={[styles.packetLossValue, { color: colors.danger }]}
-                    >
-                      {results?.packetLoss?.toFixed(2) ?? "0.00"}%
-                    </Text>
-                  </View>
-
-                  {/* Connection Quality Assessment */}
-                  <View
-                    style={[
-                      styles.qualityContainer,
-                      { backgroundColor: colors.lightGreen },
-                    ]}
-                  >
-                    <Text
-                      style={[styles.qualityTitle, { color: colors.green }]}
-                    >
-                      {t("connection_quality")}
-                    </Text>
-                    <View style={styles.qualityIndicator}>
-                      <View
-                        style={[
-                          styles.qualityDot,
-                          { backgroundColor: getQualityColor() },
-                        ]}
-                      />
-                      <Text
-                        style={[styles.qualityText, { color: colors.green }]}
-                      >
-                        {getQualityText()}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Bandwidth Summary */}
-                  <View
-                    style={[
-                      styles.bandwidthContainer,
-                      { backgroundColor: colors.card },
-                    ]}
-                  >
-                    <Text
-                      style={[styles.bandwidthTitle, { color: colors.text }]}
-                    >
-                      {t("bandwidth_summary")}
-                    </Text>
-                    <View style={styles.bandwidthRow}>
-                      <Text
-                        style={[
-                          styles.bandwidthLabel,
-                          { color: colors.lighterGrey },
-                        ]}
-                      >
-                        {t("total_bandwidth")}:
-                      </Text>
-                      <Text
-                        style={[styles.bandwidthValue, { color: colors.text }]}
-                      >
-                        {(
-                          (results?.download || 0) + (results?.upload || 0)
-                        ).toFixed(1)}{" "}
-                        Mbps
-                      </Text>
-                    </View>
-                    <View style={styles.bandwidthRow}>
-                      <Text
-                        style={[
-                          styles.bandwidthLabel,
-                          { color: colors.lighterGrey },
-                        ]}
-                      >
-                        {t("download_upload_ratio")}:
-                      </Text>
-                      <Text
-                        style={[styles.bandwidthValue, { color: colors.text }]}
-                      >
-                        {results?.upload
-                          ? (results.download / results.upload).toFixed(2)
-                          : "N/A"}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.newTestButton,
+                      styles.metricCard,
                       {
-                        backgroundColor: colors.primary,
-                        shadowColor: colors.primary,
+                        backgroundColor: colors.background,
+                        shadowColor: colors.border,
                       },
                     ]}
-                    onPress={runTest}
                   >
-                    <Ionicons name="refresh" size={20} color={"white"} />
-                    <Text
-                      style={[styles.newTestButtonText, { color: "white" }]}
+                    <View
+                      style={[
+                        styles.metricIcon,
+                        { backgroundColor: colors.card },
+                      ]}
                     >
-                      {t("run_new_test")}
+                      <Ionicons
+                        name="download"
+                        size={24}
+                        color={colors.green}
+                      />
+                    </View>
+                    <Text style={[styles.metricValue, { color: colors.text }]}>
+                      {results?.download.toFixed(1)}
                     </Text>
-                  </TouchableOpacity>
+                    <Text
+                      style={[styles.metricUnit, { color: colors.lighterGrey }]}
+                    >
+                      Mbps
+                    </Text>
+                    <Text
+                      style={[
+                        styles.metricLabel,
+                        { color: colors.lighterGrey },
+                      ]}
+                    >
+                      {t("download_speed")}
+                    </Text>
+                  </View>
+
+                  {/* Upload Speed */}
+                  <View
+                    style={[
+                      styles.metricCard,
+                      {
+                        backgroundColor: colors.background,
+                        shadowColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.metricIcon,
+                        { backgroundColor: colors.card },
+                      ]}
+                    >
+                      <Ionicons
+                        name="cloud-upload"
+                        size={24}
+                        color={colors.primary}
+                      />
+                    </View>
+                    <Text style={[styles.metricValue, { color: colors.text }]}>
+                      {results?.upload.toFixed(1)}
+                    </Text>
+                    <Text
+                      style={[styles.metricUnit, { color: colors.lighterGrey }]}
+                    >
+                      Mbps
+                    </Text>
+                    <Text
+                      style={[
+                        styles.metricLabel,
+                        { color: colors.lighterGrey },
+                      ]}
+                    >
+                      {t("upload_speed")}
+                    </Text>
+                  </View>
+
+                  {/* Latency */}
+                  <View
+                    style={[
+                      styles.metricCard,
+                      {
+                        backgroundColor: colors.background,
+                        shadowColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.metricIcon,
+                        { backgroundColor: colors.card },
+                      ]}
+                    >
+                      <Ionicons name="time" size={24} color={colors.option} />
+                    </View>
+                    <Text style={[styles.metricValue, { color: colors.text }]}>
+                      {results?.jitter?.toFixed(1)}
+                    </Text>
+                    <Text
+                      style={[styles.metricUnit, { color: colors.lighterGrey }]}
+                    >
+                      ms
+                    </Text>
+                    <Text
+                      style={[
+                        styles.metricLabel,
+                        { color: colors.lighterGrey },
+                      ]}
+                    >
+                      {t("latency")}
+                    </Text>
+                  </View>
+
+                  {/* Jitter */}
+                  <View
+                    style={[
+                      styles.metricCard,
+                      {
+                        backgroundColor: colors.background,
+                        shadowColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.metricIcon,
+                        { backgroundColor: colors.card },
+                      ]}
+                    >
+                      <Ionicons name="pulse" size={24} color={colors.accent} />
+                    </View>
+                    <Text style={[styles.metricValue, { color: colors.text }]}>
+                      {results?.latency?.toFixed(1) ?? "N/A"}
+                    </Text>
+                    <Text
+                      style={[styles.metricUnit, { color: colors.lighterGrey }]}
+                    >
+                      ms
+                    </Text>
+                    <Text
+                      style={[
+                        styles.metricLabel,
+                        { color: colors.lighterGrey },
+                      ]}
+                    >
+                      {t("jitter")}
+                    </Text>
+                  </View>
                 </View>
-              </Card>
-            </ScrollView>
+
+                {/* Packet Loss Indicator */}
+                <View
+                  style={[
+                    styles.packetLossContainer,
+                    { backgroundColor: colors.optionBg },
+                  ]}
+                >
+                  <View style={styles.packetLossHeader}>
+                    <Ionicons name="warning" size={20} color={colors.danger} />
+                    <Text
+                      style={[styles.packetLossLabel, { color: colors.danger }]}
+                    >
+                      {t("packet_loss")}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.packetLossBar,
+                      { backgroundColor: colors.lightAsh },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.packetLossFill,
+                        {
+                          backgroundColor: colors.danger,
+                          width: `${Math.min(results?.packetLoss || 0, 100)}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text
+                    style={[styles.packetLossValue, { color: colors.danger }]}
+                  >
+                    {results?.packetLoss?.toFixed(2) ?? "0.00"}%
+                  </Text>
+                </View>
+
+                {/* Connection Quality Assessment */}
+                <View
+                  style={[
+                    styles.qualityContainer,
+                    { backgroundColor: colors.lightGreen },
+                  ]}
+                >
+                  <Text style={[styles.qualityTitle, { color: colors.green }]}>
+                    {t("connection_quality")}
+                  </Text>
+                  <View style={styles.qualityIndicator}>
+                    <View
+                      style={[
+                        styles.qualityDot,
+                        { backgroundColor: getQualityColor() },
+                      ]}
+                    />
+                    <Text style={[styles.qualityText, { color: colors.green }]}>
+                      {getQualityText()}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Bandwidth Summary */}
+                <View
+                  style={[
+                    styles.bandwidthContainer,
+                    { backgroundColor: colors.card },
+                  ]}
+                >
+                  <Text style={[styles.bandwidthTitle, { color: colors.text }]}>
+                    {t("bandwidth_summary")}
+                  </Text>
+                  <View style={styles.bandwidthRow}>
+                    <Text
+                      style={[
+                        styles.bandwidthLabel,
+                        { color: colors.lighterGrey },
+                      ]}
+                    >
+                      {t("total_bandwidth")}:
+                    </Text>
+                    <Text
+                      style={[styles.bandwidthValue, { color: colors.text }]}
+                    >
+                      {(
+                        (results?.download || 0) + (results?.upload || 0)
+                      ).toFixed(1)}{" "}
+                      Mbps
+                    </Text>
+                  </View>
+                  <View style={styles.bandwidthRow}>
+                    <Text
+                      style={[
+                        styles.bandwidthLabel,
+                        { color: colors.lighterGrey },
+                      ]}
+                    >
+                      {t("download_upload_ratio")}:
+                    </Text>
+                    <Text
+                      style={[styles.bandwidthValue, { color: colors.text }]}
+                    >
+                      {results?.upload
+                        ? (results.download / results.upload).toFixed(2)
+                        : "N/A"}
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.newTestButton,
+                    {
+                      backgroundColor: colors.primary,
+                      shadowColor: colors.primary,
+                    },
+                  ]}
+                  onPress={runTest}
+                >
+                  <Ionicons name="refresh" size={20} color={"white"} />
+                  <Text style={[styles.newTestButtonText, { color: "white" }]}>
+                    {t("run_new_test")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </Card>
           </View>
         )}
       </ScrollView>
     </SafeAreaView>
-    // </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
+    minHeight: "100%",
+  },
+  cardWrapper: {
+    width: "100%",
+    maxWidth: 400, // Optional: limit max width on tablets
     alignItems: "center",
     justifyContent: "center",
+    flex: 1,
+  },
+  card: {
+    width: "100%",
+    minHeight: 200, // Ensure minimum height for proper centering
   },
   title: {
     fontSize: 24,
@@ -525,8 +524,10 @@ const styles = StyleSheet.create({
   },
   startText: {
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: 30,
     opacity: 0.7,
+    fontSize: 16,
+    lineHeight: 24,
   },
   startButton: {
     borderWidth: 4,
@@ -536,37 +537,42 @@ const styles = StyleSheet.create({
     height: 160,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 48,
+    marginBottom: 20,
   },
   startButtonText: {
     fontWeight: "600",
     fontSize: 16,
-    marginLeft: 8,
+    marginTop: 8,
+    textAlign: "center",
   },
   progressContainer: {
     padding: 20,
     alignItems: "center",
     width: "100%",
+    justifyContent: "center",
+    minHeight: 200,
   },
   progressText: {
     marginBottom: 16,
     fontSize: 16,
+    textAlign: "center",
   },
   spinner: {
     marginTop: 20,
   },
   stopButton: {
     marginTop: 20,
-    padding: 10,
+    padding: 12,
     backgroundColor: "#FF3B30",
     borderRadius: 8,
+    paddingHorizontal: 24,
   },
   stopButtonText: {
     color: "#FFFFFF",
     fontWeight: "600",
   },
   resultsContainer: {
-    paddingHorizontal: 2,
+    // padding: 16,
     width: "100%",
   },
   resultsTitle: {
@@ -688,7 +694,7 @@ const styles = StyleSheet.create({
   bandwidthContainer: {
     backgroundColor: "#F3F4F6",
     borderRadius: 12,
-    padding: 16,
+    // padding: 16,
     marginBottom: 24,
   },
   bandwidthTitle: {
@@ -736,7 +742,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
-    flex: 1,
-    paddingVertical: 40,
+    padding: 40,
+    minHeight: 300, // Ensure adequate height for proper centering
   },
 });

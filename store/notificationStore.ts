@@ -59,7 +59,6 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
       const token = getPushToken();
       if (token) {
         set({ expoPushToken: token });
-        console.log("Push token set in store:", token);
       }
 
       // Check permissions

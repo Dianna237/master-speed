@@ -1,18 +1,33 @@
 import { SplashScreen } from "@/components/SplashScreen";
+import { ThemeProvider, useTheme } from "@/components/ThemeProvider";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useNotificationStore } from "@/store/notificationStore";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
+import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import "react-native-reanimated";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import { useNotificationStore } from "@/store/notificationStore";
-import * as Notifications from "expo-notifications";
+
+function ThemedStack() {
+  const { colors } = useTheme();
+  return (
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.card },
+        headerTintColor: colors.text,
+      }}
+    >
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="+not-found" />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -40,7 +55,6 @@ export default function RootLayout() {
     const notificationListener = Notifications.addNotificationReceivedListener(
       (notification) => {
         setNotification(notification);
-        console.log("Notification received in app:", notification);
       }
     );
 
@@ -70,10 +84,7 @@ export default function RootLayout() {
       <NavigationThemeProvider
         value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
       >
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
+        <ThemedStack />
         <StatusBar style="auto" />
       </NavigationThemeProvider>
     </ThemeProvider>

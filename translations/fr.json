@@ -87,5 +87,6 @@
   "download_history": "Historique de téléchargement (Mbps)",
   "upload_history": "Historique de téléversement (Mbps)",
   "no_historical_data": "Aucune donnée historique pour {{title}}.",
+  "test_detail": "Détail du test",
   "unknown": "Inconnu"
 }

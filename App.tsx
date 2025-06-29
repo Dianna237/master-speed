@@ -1,22 +1,40 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer } from "@react-navigation/native";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ThemeProvider } from "./components/ThemeProvider";
-import { useNotificationStore } from "./store/notificationStore";
-import { useEffect } from "react";
+import {
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
+} from "@react-navigation/native";
 import * as Notifications from "expo-notifications";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ThemeProvider, useTheme } from "./components/ThemeProvider";
+import { useNotificationStore } from "./store/notificationStore";
 
 // Screens
 import HistoryScreen from "./screens/HistoryScreen";
-import SettingsScreen from "./screens/SettingsScreen";
 import TestScreen from "./screens/HomeScreen";
+import SettingsScreen from "./screens/SettingsScreen";
 
 const Tab = createBottomTabNavigator();
 
 function AppContent() {
   const { initialize, setNotification } = useNotificationStore();
+  const { isDark, colors } = useTheme();
+
+  // Create a navigation theme based on app theme
+  const navigationTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme : DefaultTheme).colors,
+      background: colors.background,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+      primary: colors.primary,
+    },
+  };
 
   useEffect(() => {
     // Initialize notification store
@@ -26,18 +44,15 @@ function AppContent() {
     const notificationListener = Notifications.addNotificationReceivedListener(
       (notification) => {
         setNotification(notification);
-        console.log("Notification received in app:", notification);
       }
     );
 
     const responseListener =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log("Notification response in app:", response);
         // Handle notification tap
         const data = response.notification.request.content.data;
         if (data?.type === "test_completed") {
-          // Navigate to results or show results
-          console.log("Test completed notification tapped in app");
+          return
         }
       });
 
@@ -48,7 +63,7 @@ function AppContent() {
   }, [initialize, setNotification]);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <StatusBar style="auto" />
       <Tab.Navigator
         screenOptions={({ route }) => ({

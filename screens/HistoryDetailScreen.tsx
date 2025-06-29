@@ -1,11 +1,12 @@
-import { RouteProp, useRoute } from "@react-navigation/native";
-import { ScrollView, StyleSheet, View, Text, Dimensions } from "react-native";
-import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
-import { Ionicons } from "@expo/vector-icons";
-import { LineChart } from "react-native-chart-kit";
+import { ThemedView } from "@/components/ThemedView";
 import { useTheme } from "@/components/ThemeProvider";
 import { useTranslation } from "@/services/TranslationService";
+import { Ionicons } from "@expo/vector-icons";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import { useEffect } from "react";
+import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import { LineChart } from "react-native-chart-kit";
 
 type RootStackParamList = {
   HistoryDetail: {
@@ -46,9 +47,14 @@ const DetailRow = ({
 
 export default function HistoryDetailScreen() {
   const route = useRoute<HistoryDetailRouteProp>();
+  const navigation = useNavigation();
   const params = route.params || {};
   const { colors, isDark } = useTheme();
   const { t } = useTranslation();
+
+  useEffect(() => {
+    navigation.setOptions({ title: t("test_detail") });
+  }, [navigation, t]);
 
   const textColor = colors.text;
   const cardBackgroundColor = colors.card;
